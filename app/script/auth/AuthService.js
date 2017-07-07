@@ -76,8 +76,6 @@ z.auth.AuthService = class AuthService {
    */
   post_access(retry_attempt = 1) {
     return new Promise((resolve, reject) => {
-      this.client.request_queue_blocked_state(z.service.RequestQueueBlockedState.ACCESS_TOKEN_REFRESH);
-
       const config = {
         crossDomain: true,
         type: 'POST',
@@ -94,7 +92,6 @@ z.auth.AuthService = class AuthService {
       }
 
       config.success = (data) => {
-        this.client.request_queue_blocked_state(z.service.RequestQueueBlockedState.NONE);
         this.save_access_token_in_client(data.token_type, data.access_token);
         resolve(data);
       };
@@ -126,7 +123,6 @@ z.auth.AuthService = class AuthService {
             return _retry();
           }, AuthService.CONFIG.POST_ACCESS_RETRY_TIMEOUT);
         }
-        this.client.request_queue_blocked_state(z.service.RequestQueueBlockedState.NONE);
         this.save_access_token_in_client();
         return reject(new z.auth.AccessTokenError(z.auth.AccessTokenError.TYPE.RETRIES_EXCEEDED));
       };
