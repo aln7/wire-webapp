@@ -155,7 +155,7 @@ z.ViewModel.content.ContentViewModel = class ContentViewModel {
     if (conversation.id) {
       conversation_promise = Promise.resolve(conversation);
     } else {
-      conversation_promise = this.conversation_repository.get_conversation_by_id_async(conversation);
+      conversation_promise = this.conversation_repository.get_conversation_by_id(conversation);
     }
 
     conversation_promise
