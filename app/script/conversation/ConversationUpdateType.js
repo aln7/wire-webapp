@@ -22,10 +22,11 @@
 window.z = window.z || {};
 window.z.conversation = z.conversation || {};
 
-z.conversation.ConversationUpdateType = {
+z.conversation.TIMESTAMP_TYPE = {
   ARCHIVED_TIMESTAMP: 'archived_timestamp',
   CLEARED_TIMESTAMP: 'cleared_timestamp',
   LAST_EVENT_TIMESTAMP: 'last_event_timestamp',
   LAST_READ_TIMESTAMP: 'last_read_timestamp',
+  LAST_SERVER_TIMESTAMP: 'last_server_timestamp',
   MUTED_TIMESTAMP: 'muted_timestamp',
 };

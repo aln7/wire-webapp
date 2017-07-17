@@ -116,14 +116,14 @@ describe('Conversation', function() {
       expect(conversation_et.last_event_timestamp()).toBe(message_et.timestamp());
     });
 
-    it('adding a message should not update the conversation timestamp if should_effect_conversation_timestamp is false', function() {
+    it('adding a message should not update the conversation timestamp if effect_conversation_order is false', function() {
       const message_et = new z.entity.Message();
       message_et.timestamp(new Date('2014-12-15T09:21:14.225Z').getTime());
       conversation_et.add_message(message_et);
 
       const message_two_et = new z.entity.Message();
       message_two_et.timestamp(new Date('2014-12-16T09:21:14.225Z').getTime());
-      message_two_et.should_effect_conversation_timestamp = false;
+      message_two_et.effect_conversation_order = false;
       conversation_et.add_message(message_two_et);
       expect(conversation_et.last_event_timestamp()).toBe(message_et.timestamp());
     });
@@ -711,7 +711,7 @@ describe('Conversation', function() {
       expect(lrt).toBe(0);
       const new_lrt_string = '1480338525243';
       const new_lrt_number = window.parseInt(new_lrt_string, 10);
-      conversation_et.set_timestamp(new_lrt_string, z.conversation.ConversationUpdateType.LAST_READ_TIMESTAMP);
+      conversation_et.set_timestamp(new_lrt_string, z.conversation.TIMESTAMP_TYPE.LAST_READ_TIMESTAMP);
       expect(conversation_et.last_read_timestamp()).toBe(new_lrt_number);
     })
   );

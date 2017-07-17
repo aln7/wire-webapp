@@ -947,7 +947,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
   _update_cleared_timestamp(conversation_et) {
     const cleared_timestamp = conversation_et.last_event_timestamp();
 
-    if (conversation_et.set_timestamp(cleared_timestamp, z.conversation.ConversationUpdateType.CLEARED_TIMESTAMP)) {
+    if (conversation_et.set_timestamp(cleared_timestamp, z.conversation.TIMESTAMP_TYPE.CLEARED_TIMESTAMP)) {
       const message_content = new z.proto.Cleared(conversation_et.id, cleared_timestamp);
       const generic_message = new z.proto.GenericMessage(z.util.create_random_uuid());
       generic_message.set(z.cryptography.GENERIC_MESSAGE_TYPE.CLEARED, message_content);
@@ -1240,10 +1240,9 @@ z.conversation.ConversationRepository = class ConversationRepository {
    * @returns {undefined} No return value
    */
   _update_last_read_timestamp(conversation_et) {
-    const last_message = conversation_et.get_last_message();
-    const timestamp = last_message ? last_message.timestamp() : undefined;
+    const timestamp = conversation_et.last_server_timestamp();
 
-    if (timestamp && conversation_et.set_timestamp(timestamp, z.conversation.ConversationUpdateType.LAST_READ_TIMESTAMP)) {
+    if (timestamp && conversation_et.set_timestamp(timestamp, z.conversation.TIMESTAMP_TYPE.LAST_READ_TIMESTAMP)) {
       const message_content = new z.proto.LastRead(conversation_et.id, conversation_et.last_read_timestamp());
       const generic_message = new z.proto.GenericMessage(z.util.create_random_uuid());
       generic_message.set(z.cryptography.GENERIC_MESSAGE_TYPE.LAST_READ, message_content);
@@ -1290,7 +1289,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
       })
       .then((payload) => {
         const asset_data = conversation_et.ephemeral_timer() ? generic_message.ephemeral.asset : generic_message.asset;
-        const event = this._construct_otr_event(conversation_et.id, z.event.Backend.CONVERSATION.ASSET_ADD);
+        const event = this._construct_otr_event(conversation_et.id, z.event.Client.CONVERSATION.ASSET_ADD);
 
         event.data.otr_key = asset_data.uploaded.otr_key;
         event.data.sha256 = asset_data.uploaded.sha256;
@@ -1807,7 +1806,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
           throw new Error('Cannot send message to conversation you are not part of');
         }
 
-        const optimistic_event = this._construct_otr_event(conversation_et.id, z.event.Backend.CONVERSATION.MESSAGE_ADD);
+        const optimistic_event = this._construct_otr_event(conversation_et.id, z.event.Client.CONVERSATION.MESSAGE_ADD);
         return this.cryptography_repository.cryptography_mapper.map_generic_message(generic_message, optimistic_event);
       })
       .then((message_mapped) => {
@@ -2357,14 +2356,6 @@ z.conversation.ConversationRepository = class ConversationRepository {
     const {conversation: conversation_id, type} = event_json;
     this.logger.info(`»» Event: '${type}'`, {event_json: JSON.stringify(event_json), event_object: event_json});
 
-    // Ignore 'conversation.member-join if we join a 1to1 conversation (accept a connection request)
-    if (type === z.event.Backend.CONVERSATION.MEMBER_JOIN) {
-      const connection_et = this.user_repository.get_connection_by_conversation_id(conversation_id);
-      if (connection_et && connection_et.status() === z.user.ConnectionStatus.PENDING) {
-        return Promise.resolve();
-      }
-    }
-
     // Handle conversation create event separately
     if (type === z.event.Backend.CONVERSATION.CREATE) {
       return this._on_create(event_json);
@@ -2376,6 +2367,12 @@ z.conversation.ConversationRepository = class ConversationRepository {
       .then((conversation_et) => {
         previously_archived = conversation_et.is_archived();
 
+        const injected_event = source === z.event.EventRepository.SOURCE.INJECTED;
+        if (!injected_event) {
+          const timestamp = new Date(event_json.time).getTime();
+          conversation_et.update_server_timestamp(timestamp);
+        }
+
         switch (type) {
           case z.event.Backend.CONVERSATION.MEMBER_JOIN:
             return this._on_member_join(conversation_et, event_json);
@@ -2384,14 +2381,14 @@ z.conversation.ConversationRepository = class ConversationRepository {
             return this._on_member_leave(conversation_et, event_json);
           case z.event.Backend.CONVERSATION.MEMBER_UPDATE:
             return this._on_member_update(conversation_et, event_json);
-          case z.event.Backend.CONVERSATION.MESSAGE_ADD:
-            return this._on_message_add(conversation_et, event_json);
-          case z.event.Backend.CONVERSATION.ASSET_ADD:
-            return this._on_asset_add(conversation_et, event_json);
           case z.event.Backend.CONVERSATION.RENAME:
             return this._on_rename(conversation_et, event_json);
+          case z.event.Client.CONVERSATION.ASSET_ADD:
+            return this._on_asset_add(conversation_et, event_json);
           case z.event.Client.CONVERSATION.CONFIRMATION:
             return this._on_confirmation(conversation_et, event_json);
+          case z.event.Client.CONVERSATION.MESSAGE_ADD:
+            return this._on_message_add(conversation_et, event_json);
           case z.event.Client.CONVERSATION.MESSAGE_DELETE:
             return this._on_message_deleted(conversation_et, event_json);
           case z.event.Client.CONVERSATION.MESSAGE_HIDDEN:
@@ -2557,7 +2554,11 @@ z.conversation.ConversationRepository = class ConversationRepository {
         }
 
         return this.update_participating_user_ets(this.map_conversations(event_json))
-          .then((conversation_et) => this.save_conversation(conversation_et))
+          .then((conversation_et) => {
+            const timestamp = new Date(event_json.time).getDate();
+            conversation_et.update_server_timestamp(timestamp);
+            return this.save_conversation(conversation_et);
+          })
           .then((conversation_et) => this._prepare_conversation_create_notification(conversation_et));
       });
   }
@@ -2571,6 +2572,12 @@ z.conversation.ConversationRepository = class ConversationRepository {
    * @returns {Promise} Resolves when the event was handled
    */
   _on_member_join(conversation_et, event_json) {
+    // Ignore if we join a 1to1 conversation (accept a connection request)
+    const connection_et = this.user_repository.get_connection_by_conversation_id(conversation_et.id);
+    if (connection_et && connection_et.status() === z.user.ConnectionStatus.PENDING) {
+      return Promise.resolve();
+    }
+
     const event_data = event_json.data;
 
     event_data.user_ids.forEach((user_id) => {
@@ -2580,7 +2587,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
     });
 
     // Self user joins again
-    const self_user_rejoins = event_json.data.user_ids.includes(this.user_repository.self().id);
+    const self_user_rejoins = event_data.user_ids.includes(this.user_repository.self().id);
     if (self_user_rejoins) {
       conversation_et.status(z.conversation.ConversationStatus.CURRENT_MEMBER);
     }
@@ -2588,7 +2595,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
     return this.update_participating_user_ets(conversation_et)
       .then(() => this._add_event_to_conversation(event_json, conversation_et))
       .then((message_et) => {
-        this.verification_state_handler.on_member_joined(conversation_et, event_json.data.user_ids);
+        this.verification_state_handler.on_member_joined(conversation_et, event_data.user_ids);
         return {conversation_et: conversation_et, message_et: message_et};
       });
   }
@@ -2642,7 +2649,9 @@ z.conversation.ConversationRepository = class ConversationRepository {
 
     if (previously_archived && !conversation_et.is_archived()) {
       return this._fetch_users_and_events(conversation_et);
-    } else if (conversation_et.is_archived() && next_conversation_et != null) {
+    }
+
+    if (conversation_et.is_archived() && next_conversation_et != null) {
       amplify.publish(z.event.WebApp.CONVERSATION.SHOW, next_conversation_et);
     }
   }

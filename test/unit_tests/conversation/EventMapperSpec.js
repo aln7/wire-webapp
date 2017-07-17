@@ -49,7 +49,7 @@ describe('Event Mapper', function() {
         from: z.util.create_random_uuid,
         id: event_id,
         time: new Date().toISOString(),
-        type: z.event.Backend.CONVERSATION.MESSAGE_ADD,
+        type: z.event.Client.CONVERSATION.MESSAGE_ADD,
       };
 
       const message_et = event_mapper.map_json_event(event, conversation_et);
@@ -74,7 +74,7 @@ describe('Event Mapper', function() {
         from: z.util.create_random_uuid,
         id: event_id,
         time: new Date().toISOString(),
-        type: z.event.Backend.CONVERSATION.MESSAGE_ADD,
+        type: z.event.Client.CONVERSATION.MESSAGE_ADD,
       };
 
       const message_et = event_mapper.map_json_event(event, conversation_et);
@@ -100,7 +100,7 @@ describe('Event Mapper', function() {
         from: z.util.create_random_uuid,
         id: event_id,
         time: new Date().toISOString(),
-        type: z.event.Backend.CONVERSATION.MESSAGE_ADD,
+        type: z.event.Client.CONVERSATION.MESSAGE_ADD,
       };
 
       const message_et = event_mapper.map_json_event(event, conversation_et);

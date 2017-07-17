@@ -20,12 +20,11 @@
 'use strict';
 
 window.z = window.z || {};
-window.z.entity = z.entity || {};
+window.z.event = z.event || {};
 
-z.entity.MissedMessage = class MissedMessage extends z.entity.Message {
-  constructor() {
-    super();
-    this.super_type = z.message.SuperType.MISSED;
-    this.affect_conversation_order = false;
-  }
+z.event.EVENT_TYPE = {
+  CALL: 'call',
+  CONVERSATION: 'conversation',
+  TEAM: 'team',
+  USER: 'user',
 };
