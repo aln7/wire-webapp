@@ -502,7 +502,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
   }
 
   get_all_users_in_conversation(conversation_id) {
-    return this.get_conversation_by_id_async(conversation_id)
+    return this.get_conversation_by_id(conversation_id)
       .then((conversation_et) => [this.user_repository.self()].concat(conversation_et.participating_user_ets()));
   }
 
@@ -1132,22 +1132,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
       return Promise.reject(new z.conversation.ConversationError(z.conversation.ConversationError.TYPE.CONVERSATION_NOT_FOUND));
     }
 
-    const payload = {
-      otr_archived: true,
-      otr_archived_ref: new Date(conversation_et.last_server_timestamp()).toISOString(),
-    };
-
-    return this.conversation_service.update_member_properties(conversation_et.id, payload)
-      .catch((error) => {
-        this.logger.error(`Conversation '${conversation_et.id}' could not be archived: ${error.code}\r\nPayload: ${JSON.stringify(payload)}`, error);
-        if (error.code !== z.service.BackendClientError.STATUS_CODE.NOT_FOUND) {
-          throw error;
-        }
-      })
-      .then(() => {
-        this._on_member_update(conversation_et, {data: payload}, next_conversation_et);
-        this.logger.info(`Archived conversation '${conversation_et.id}' locally on '${payload.otr_archived_ref}'`);
-      });
+    return this.toggle_archive_conversation(conversation_et, 'archiving', true, next_conversation_et);
   }
 
   /**
@@ -1157,27 +1142,31 @@ z.conversation.ConversationRepository = class ConversationRepository {
    * @param {string} trigger - Trigger for unarchive
    * @returns {Promise} Resolves when the conversation was unarchived
    */
-  unarchive_conversation(conversation_et, trigger) {
+  unarchive_conversation(conversation_et, trigger = 'unknown') {
     if (!conversation_et) {
       return Promise.reject(new z.conversation.ConversationError(z.conversation.ConversationError.TYPE.CONVERSATION_NOT_FOUND));
     }
 
+    return this.toggle_archive_conversation(conversation_et, false);
+  }
+
+  toggle_archive_conversation(conversation_et, trigger, new_archive_state, next_conversation_et) {
     const payload = {
-      otr_archived: false,
+      otr_archived: new_archive_state,
       otr_archived_ref: new Date(conversation_et.last_server_timestamp()).toISOString(),
     };
 
-    this.logger.info(`Unarchiving conversation '${conversation_et.id}' triggered by '${trigger}'`);
+    this.logger.info(`Conversation '${conversation_et.id}' archive state change triggered by '${trigger}'`);
     return this.conversation_service.update_member_properties(conversation_et.id, payload)
       .catch((error) => {
-        this.logger.error(`Conversation '${conversation_et.id}' could not be unarchived: ${error.code}`);
+        this.logger.error(`Failed to change conversation '${conversation_et.id}' archived state to '${new_archive_state}': ${error.code}`);
         if (error.code !== z.service.BackendClientError.STATUS_CODE.NOT_FOUND) {
           throw error;
         }
       })
       .then(() => {
-        this._on_member_update(conversation_et, {data: payload});
-        this.logger.info(`Unarchived conversation '${conversation_et.id}' on '${payload.otr_archived_ref}'`);
+        this._on_member_update(conversation_et, {data: payload}, next_conversation_et);
+        this.logger.info(`Update conversation '${conversation_et.id}' archive state to '${new_archive_state}' on '${payload.otr_archived_ref}'`);
       });
   }
 
@@ -2349,8 +2338,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
 
         const injected_event = source === z.event.EventRepository.SOURCE.INJECTED;
         if (!injected_event) {
-          const timestamp = new Date(event_json.time).getTime();
-          conversation_et.update_server_timestamp(timestamp);
+          conversation_et.update_server_timestamp(event_json.time);
         }
 
         switch (type) {
@@ -2535,8 +2523,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
 
         return this.update_participating_user_ets(this.map_conversations(event_json))
           .then((conversation_et) => {
-            const timestamp = new Date(event_json.time).getDate();
-            conversation_et.update_server_timestamp(timestamp);
+            conversation_et.update_server_timestamp(event_json.time);
             return this.save_conversation(conversation_et);
           })
           .then((conversation_et) => this._prepare_conversation_create_notification(conversation_et));

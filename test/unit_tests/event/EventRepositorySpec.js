@@ -211,12 +211,12 @@ describe('Event Repository', function() {
         .catch(done.fail);
     });
 
-    it('skips outdated "conversation.message-add" events arriving', function(done) {
+    it('skips outdated "conversation.message-add" events received via the notification stream', function(done) {
       /* eslint-disable comma-spacing, key-spacing, sort-keys, quotes */
       const event = {"conversation":"9fe8b359-b9e0-4624-b63c-71747664e4fa","time":"2016-08-05T16:18:41.820Z","data":{"content":"Hello","nonce":"1cea64c5-afbe-4c9d-b7d0-c49aa3b0a53d"},"from":"532af01e-1e24-4366-aacf-33b67d4ee376","id":"74f.800122000b2d7182","type":"conversation.message-add"};
       /* eslint-enable comma-spacing, key-spacing, sort-keys, quotes */
 
-      TestFactory.event_repository._handle_event(event)
+      TestFactory.event_repository._handle_event(event, z.event.EventRepository.SOURCE.STREAM)
         .then(function(result) {
           expect(result).toBeTruthy();
           expect(TestFactory.event_repository.conversation_service.save_event).not.toHaveBeenCalled();
@@ -226,12 +226,12 @@ describe('Event Repository', function() {
         .catch(done.fail);
     });
 
-    it('skips outdated "conversation.asset-add" events', function(done) {
+    it('skips outdated "conversation.asset-add" events received via the notification stream', function(done) {
       /* eslint-disable comma-spacing, key-spacing, sort-keys, quotes */
       const event = {"data":{"data":"/9j/4AAQSkZJRgABAQAAAQABAAD/.../Z","content_type":"image/jpeg","id":"01c86ab7-4d38-4a4e-8e7e-e6d73a3c2b94","content_length":1218,"info":{"original_width":1094,"public":true,"width":49,"correlation_id":"48aa1bd4-fbb1-4cdc-bbbc-7160dc4d032e","original_height":1919,"tag":"preview","nonce":"48aa1bd4-fbb1-4cdc-bbbc-7160dc4d032e","height":86}},"from":"532af01e-1e24-4366-aacf-33b67d4ee376","time":"2015-12-18T11:15:00.201Z","id":"ae8.800122000b259e4e","type":"conversation.asset-add","conversation":"5aeafc6d-2a2d-4105-bc87-41cc8b72774a"};
       /* eslint-enable comma-spacing, key-spacing, sort-keys, quotes */
 
-      TestFactory.event_repository._handle_event(event)
+      TestFactory.event_repository._handle_event(event, z.event.EventRepository.SOURCE.STREAM)
         .then(function(result) {
           expect(result).toBeTruthy();
           expect(TestFactory.event_repository.conversation_service.save_event).not.toHaveBeenCalled();
@@ -241,12 +241,12 @@ describe('Event Repository', function() {
         .catch(done.fail);
     });
 
-    it('skips outdated "conversation.knock" events', function(done) {
+    it('skips outdated "conversation.knock" events received via the notification stream', function(done) {
       /* eslint-disable comma-spacing, key-spacing, sort-keys, quotes */
       const event = {"data":{"nonce":"33a16765-2b23-42a1-b1cc-414d1baa9095"},"from":"d794bf14-96a0-43e9-be95-ae761d1acb4e","time":"2015-12-21T10:14:59.661Z","id":"a2b.800122000ad94450","type":"conversation.knock","conversation":"872eaa34-9673-44af-abaa-e1b6979a7cff"};
       /* eslint-enable comma-spacing, key-spacing, sort-keys, quotes */
 
-      TestFactory.event_repository._handle_event(event)
+      TestFactory.event_repository._handle_event(event, z.event.EventRepository.SOURCE.STREAM)
         .then(function(result) {
           expect(result).toBeTruthy();
           expect(TestFactory.event_repository.conversation_service.save_event).not.toHaveBeenCalled();
@@ -262,7 +262,7 @@ describe('Event Repository', function() {
       const event = {"conversation":"9fe8b359-b9e0-4624-b63c-71747664e4fa","time":"2016-08-05T16:18:41.820Z","data":{"content":"Hello","nonce":"1cea64c5-afbe-4c9d-b7d0-c49aa3b0a53d"},"from":"532af01e-1e24-4366-aacf-33b67d4ee376","id":"74f.800122000b2d7182","type":"conversation.message-add"};
       /* eslint-enable comma-spacing, key-spacing, sort-keys, quotes */
 
-      TestFactory.event_repository._handle_event(event)
+      TestFactory.event_repository._handle_event(event, z.event.EventRepository.SOURCE.STREAM)
         .then(function(result) {
           expect(result).toBeTruthy();
           expect(TestFactory.event_repository.conversation_service.save_event).not.toHaveBeenCalled();

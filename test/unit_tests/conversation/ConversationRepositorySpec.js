@@ -294,12 +294,12 @@ describe('ConversationRepository', function() {
       const group_cleared = _generate_conversation(z.conversation.ConversationType.REGULAR);
       group_cleared.name('Cleared');
       group_cleared.last_event_timestamp(Date.now() - 1000);
-      group_cleared.set_timestamp(Date.now(), z.conversation.ConversationUpdateType.CLEARED_TIMESTAMP);
+      group_cleared.set_timestamp(Date.now(), z.conversation.TIMESTAMP_TYPE.CLEARED_TIMESTAMP);
 
       const group_removed = _generate_conversation(z.conversation.ConversationType.REGULAR);
       group_removed.name('Removed');
       group_removed.last_event_timestamp(Date.now() - 1000);
-      group_removed.set_timestamp(Date.now(), z.conversation.ConversationUpdateType.CLEARED_TIMESTAMP);
+      group_removed.set_timestamp(Date.now(), z.conversation.TIMESTAMP_TYPE.CLEARED_TIMESTAMP);
       group_removed.status(z.conversation.ConversationStatus.PAST_MEMBER);
 
       Promise.all([

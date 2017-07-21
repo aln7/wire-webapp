@@ -164,8 +164,7 @@ z.calling.CallingRepository = class CallingRepository {
         .then((conversation_et) => {
           const injected_event = source === z.event.EventRepository.SOURCE.INJECTED;
           if (!injected_event) {
-            const timestamp = new Date(call_message_et.time).getTime();
-            conversation_et.update_server_timestamp(timestamp);
+            conversation_et.update_server_timestamp(call_message_et.time);
           }
         })
         .then(() => {

@@ -544,7 +544,7 @@ z.event.EventRepository = class EventRepository {
               if (stored_event) {
                 const {data: event_data, from, type} = mapped_event;
                 const from_same_user = stored_event.from === from;
-                const is_message_add = type === z.event.Backend.CONVERSATION.MESSAGE_ADD;
+                const is_message_add = type === z.event.Client.CONVERSATION.MESSAGE_ADD;
 
                 if (!from_same_user) {
                   this.logger.warn(`Ignored event from user '${mapped_event.from}' with ID '${mapped_event.id}' previously used by '${stored_event.from}'`, mapped_event);

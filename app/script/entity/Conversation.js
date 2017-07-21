@@ -475,8 +475,10 @@ z.entity.Conversation = class Conversation {
     return message_et;
   }
 
-  update_server_timestamp(timestamp) {
-    if (_.isNumber(timestamp)) {
+  update_server_timestamp(time) {
+    const timestamp = new Date(time).getTime();
+
+    if (!_.isNaN(timestamp)) {
       this.set_timestamp(timestamp, z.conversation.TIMESTAMP_TYPE.LAST_SERVER_TIMESTAMP);
     }
   }
@@ -489,14 +491,12 @@ z.entity.Conversation = class Conversation {
    * @returns {undefined} No return value
    */
   _update_timestamps(message_et) {
-    if (message_et && message_et.timestamp()) {
-      if (message_et.visible() && message_et.affect_conversation_order) {
-        this.set_timestamp(message_et.timestamp(), z.conversation.TIMESTAMP_TYPE.LAST_EVENT_TIMESTAMP);
+    if (message_et && message_et.timestamp() && message_et.visible() && message_et.affect_conversation_order) {
+      this.set_timestamp(message_et.timestamp(), z.conversation.TIMESTAMP_TYPE.LAST_EVENT_TIMESTAMP);
 
-        const from_self = message_et.user() && message_et.user().is_me;
-        if (from_self) {
-          this.set_timestamp(message_et.timestamp(), z.conversation.TIMESTAMP_TYPE.LAST_READ_TIMESTAMP);
-        }
+      const from_self = message_et.user() && message_et.user().is_me;
+      if (from_self) {
+        this.set_timestamp(message_et.timestamp(), z.conversation.TIMESTAMP_TYPE.LAST_READ_TIMESTAMP);
       }
     }
   }
