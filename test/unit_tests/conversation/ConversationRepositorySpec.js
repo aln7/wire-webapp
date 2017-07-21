@@ -131,6 +131,7 @@ describe('ConversationRepository', function() {
 
     beforeEach(function() {
       spyOn(TestFactory.conversation_repository, '_on_member_join').and.callThrough();
+      spyOn(TestFactory.conversation_repository, 'update_participating_user_ets').and.callThrough();
 
       member_join_event = {
         conversation: conversation_et.id,
@@ -148,6 +149,7 @@ describe('ConversationRepository', function() {
       TestFactory.conversation_repository.on_conversation_event(member_join_event)
         .then(function() {
           expect(TestFactory.conversation_repository._on_member_join).toHaveBeenCalled();
+          expect(TestFactory.conversation_repository.update_participating_user_ets).toHaveBeenCalled();
           done();
         })
         .catch(done.fail);
@@ -162,7 +164,8 @@ describe('ConversationRepository', function() {
 
       TestFactory.conversation_repository.on_conversation_event(member_join_event)
         .then(function() {
-          expect(TestFactory.conversation_repository._on_member_join).not.toHaveBeenCalled();
+          expect(TestFactory.conversation_repository._on_member_join).toHaveBeenCalled();
+          expect(TestFactory.conversation_repository.update_participating_user_ets).not.toHaveBeenCalled();
           done();
         })
         .catch(done.fail);
@@ -291,12 +294,12 @@ describe('ConversationRepository', function() {
       const group_cleared = _generate_conversation(z.conversation.ConversationType.REGULAR);
       group_cleared.name('Cleared');
       group_cleared.last_event_timestamp(Date.now() - 1000);
-      group_cleared.set_timestamp(Date.now(), z.conversation.TIMESTAMP_TYPE.CLEARED_TIMESTAMP);
+      group_cleared.set_timestamp(Date.now(), z.conversation.ConversationUpdateType.CLEARED_TIMESTAMP);
 
       const group_removed = _generate_conversation(z.conversation.ConversationType.REGULAR);
       group_removed.name('Removed');
       group_removed.last_event_timestamp(Date.now() - 1000);
-      group_removed.set_timestamp(Date.now(), z.conversation.TIMESTAMP_TYPE.CLEARED_TIMESTAMP);
+      group_removed.set_timestamp(Date.now(), z.conversation.ConversationUpdateType.CLEARED_TIMESTAMP);
       group_removed.status(z.conversation.ConversationStatus.PAST_MEMBER);
 
       Promise.all([
@@ -597,7 +600,7 @@ describe('ConversationRepository', function() {
         from: z.util.create_random_uuid(),
         id: message_et.id,
         time: Date.now(),
-        type: z.event.Backend.CONVERSATION.ASSET_ADD,
+        type: z.event.Client.CONVERSATION.ASSET_ADD,
       };
 
       TestFactory.conversation_repository._on_asset_upload_complete(conversation_et, event)

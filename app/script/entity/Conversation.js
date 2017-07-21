@@ -117,7 +117,6 @@ z.entity.Conversation = class Conversation {
     this.messages = ko.pureComputed(() => this.messages_unordered().sort((message_a, message_b) => {
       return message_a.timestamp() - message_b.timestamp();
     }));
-    this.messages.subscribe(() => this.update_latest_from_message(this.get_last_message()));
 
     this.creation_message = undefined;
 
@@ -478,12 +477,14 @@ z.entity.Conversation = class Conversation {
 
   update_server_timestamp(timestamp) {
     if (_.isNumber(timestamp)) {
-      this.set_timestamp(timestamp(), z.conversation.TIMESTAMP_TYPE.LAST_SERVER_TIMESTAMP);
+      this.set_timestamp(timestamp, z.conversation.TIMESTAMP_TYPE.LAST_SERVER_TIMESTAMP);
     }
   }
 
   /**
    * Update information about conversation activity from single message.
+   *
+   * @private
    * @param {z.entity.Message} message_et - Message to be added to conversation
    * @returns {undefined} No return value
    */

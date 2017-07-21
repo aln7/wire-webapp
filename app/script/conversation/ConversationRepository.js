@@ -933,7 +933,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
    * @returns {undefined} No return value
    */
   _update_cleared_timestamp(conversation_et) {
-    const cleared_timestamp = conversation_et.last_event_timestamp();
+    const cleared_timestamp = conversation_et.last_server_timestamp();
 
     if (conversation_et.set_timestamp(cleared_timestamp, z.conversation.TIMESTAMP_TYPE.CLEARED_TIMESTAMP)) {
       const message_content = new z.proto.Cleared(conversation_et.id, cleared_timestamp);
@@ -1098,18 +1098,10 @@ z.conversation.ConversationRepository = class ConversationRepository {
       return Promise.reject(new z.conversation.ConversationError(z.conversation.ConversationError.TYPE.CONVERSATION_NOT_FOUND));
     }
 
-    let payload;
-    if (conversation_et.is_muted()) {
-      payload = {
-        otr_muted: false,
-        otr_muted_ref: new Date().toISOString(),
-      };
-    } else {
-      payload = {
-        otr_muted: true,
-        otr_muted_ref: new Date(conversation_et.last_event_timestamp()).toISOString(),
-      };
-    }
+    const payload = {
+      otr_muted: !conversation_et.is_muted(),
+      otr_muted_ref: new Date(conversation_et.last_server_timestamp()).toISOString(),
+    };
 
     return this.conversation_service.update_member_properties(conversation_et.id, payload)
       .then(() => {
@@ -1142,7 +1134,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
 
     const payload = {
       otr_archived: true,
-      otr_archived_ref: new Date(conversation_et.last_event_timestamp()).toISOString(),
+      otr_archived_ref: new Date(conversation_et.last_server_timestamp()).toISOString(),
     };
 
     return this.conversation_service.update_member_properties(conversation_et.id, payload)
@@ -1172,7 +1164,7 @@ z.conversation.ConversationRepository = class ConversationRepository {
 
     const payload = {
       otr_archived: false,
-      otr_archived_ref: new Date(conversation_et.last_event_timestamp()).toISOString(),
+      otr_archived_ref: new Date(conversation_et.last_server_timestamp()).toISOString(),
     };
 
     this.logger.info(`Unarchiving conversation '${conversation_et.id}' triggered by '${trigger}'`);
